@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:14-alpine
+    environment:
+      - POSTGRES_PASSWORD=postgres
+  app:
+    image: node
+    volumes:
+      - .:/usr/src/app
+    ports:
+      - 3000:3000
+    command: ["node", "/usr/src/app/index.js"]
+    environment:
+      - DD_ENV=test
+      - DD_AGENT_HOST=datadog
+      - DD_TRACE_AGENT_PORT=8126
+      - PGHOST=postgres
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+  datadog:
+    image: gcr.io/datadoghq/agent:latest
+    pid: host
+    links:
+      - app
+    environment:
+      - DD_API_KEY=${DD_API_KEY}
+      - DD_SITE=datadoghq.com
+      - DD_APM_ENABLED=true
+      - DD_APM_NON_LOCAL_TRAFFIC=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
